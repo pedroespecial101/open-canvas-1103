@@ -565,11 +565,11 @@ const GEMINI_MODELS: ModelConfigurationParams[] = [
 ];
 
 export const LANGCHAIN_USER_ONLY_MODELS = [
-  "o1",
-  "gpt-4o",
-  "gpt-4.5-preview",
-  "claude-3-5-sonnet-latest",
-  "claude-3-7-sonnet-latest",
+  // "o1",
+  // "gpt-4o",
+  // "gpt-4.5-preview",
+  // "claude-3-5-sonnet-latest", 
+  /* Make sure claude-3-7-sonnet-latest is not restricted */
   "gemini-2.0-flash-thinking-exp-01-21",
   "gemini-2.5-pro-preview-05-06",
   "claude-sonnet-4-0",
@@ -614,6 +614,12 @@ export const ALL_MODELS: ModelConfigurationParams[] = [
   ...OLLAMA_MODELS,
   ...GROQ_MODELS,
 ];
+
+// Debug logging
+console.log("ALL_MODELS immediately after creation:", ALL_MODELS.map(m => m.name));
+console.log("ANTHROPIC_MODELS:", ANTHROPIC_MODELS.map(m => m.name));
+console.log("claude-3-7-sonnet-latest in ALL_MODELS:", 
+  ALL_MODELS.some(m => m.name === "claude-3-7-sonnet-latest"));
 
 type OPENAI_MODEL_NAMES = (typeof OPENAI_MODELS)[number]["name"];
 type ANTHROPIC_MODEL_NAMES = (typeof ANTHROPIC_MODELS)[number]["name"];

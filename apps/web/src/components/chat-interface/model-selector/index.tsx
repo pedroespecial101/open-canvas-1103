@@ -123,10 +123,22 @@ export default function ModelSelector({
   const [open, setOpen] = useState(false);
   const [openConfigModelId, setOpenConfigModelId] = useState<ALL_MODEL_NAMES>();
 
+  // Debug: Log all models from the import before any filtering
+  console.log("ALL_MODELS before filtering:", ALL_MODELS.map(m => ({name: m.name, label: m.label})));
+  console.log("ANTHROPIC_MODELS directly from import:", 
+    ALL_MODELS.filter(m => m.config.provider === "anthropic").map(m => ({name: m.name, label: m.label})));
+  console.log("LANGCHAIN_USER_ONLY_MODELS:", LANGCHAIN_USER_ONLY_MODELS);
+
   useEffect(() => {
     if (!user) return;
-    setIsLangChainUser(user?.email?.endsWith("@langchain.dev") || false);
+    // When NEXT_PUBLIC_LANGSMITH_DEV_EMAIL_REQUIRED=false, allow all users to access all models
+    const bypassEmailRestriction = process.env.NEXT_PUBLIC_LANGSMITH_DEV_EMAIL_REQUIRED === "false";
+    const hasLangChainEmail = user?.email?.endsWith("@langchain.dev") || false;
+    
+    // User can access all models if they have a LangChain email OR if restrictions are bypassed
+    setIsLangChainUser(hasLangChainEmail || bypassEmailRestriction);
   }, [user]);
+
 
   const handleModelChange = useCallback(
     async (newModel: ALL_MODEL_NAMES) => {
@@ -137,10 +149,13 @@ export default function ModelSelector({
   );
 
   const allAllowedModels = ALL_MODELS.filter((model) => {
+    console.log(`Checking model: ${model.name}, isLangChainUser: ${isLangChainUser}`);
+    
     if (
       !isLangChainUser &&
       LANGCHAIN_USER_ONLY_MODELS.some((m) => m === model.name)
     ) {
+      console.log(`Filtering out ${model.name} due to LANGCHAIN_USER_ONLY_MODELS restriction`);
       return false;
     }
 
@@ -148,36 +163,57 @@ export default function ModelSelector({
       model.name.includes("fireworks/") &&
       process.env.NEXT_PUBLIC_FIREWORKS_ENABLED === "false"
     ) {
+      console.log(`Filtering out ${model.name} due to FIREWORKS_ENABLED=false`);
       return false;
     }
+    
     if (
       model.name.includes("claude-") &&
       process.env.NEXT_PUBLIC_ANTHROPIC_ENABLED === "false"
     ) {
+      console.log(`Filtering out ${model.name} due to ANTHROPIC_ENABLED=false`);
       return false;
     }
+    
+    // Debug all environment variables that might affect Anthropic models
+    if (model.name.includes("claude-")) {
+      console.log(`Environment check for ${model.name}:
+        NEXT_PUBLIC_ANTHROPIC_ENABLED: ${process.env.NEXT_PUBLIC_ANTHROPIC_ENABLED}
+        ANTHROPIC_API_KEY exists: ${Boolean(process.env.ANTHROPIC_API_KEY)}
+        NEXT_PUBLIC_LANGSMITH_DEV_EMAIL_REQUIRED: ${process.env.NEXT_PUBLIC_LANGSMITH_DEV_EMAIL_REQUIRED}
+        Current isLangChainUser: ${isLangChainUser}
+      `);
+    }
+    
     if (
       model.name.includes("gpt-") &&
       process.env.NEXT_PUBLIC_OPENAI_ENABLED === "false"
     ) {
+      console.log(`Filtering out ${model.name} due to OPENAI_ENABLED=false`);
       return false;
     }
+    
     if (
       model.name.includes("azure/") &&
       process.env.NEXT_PUBLIC_AZURE_ENABLED === "false"
     ) {
+      console.log(`Filtering out ${model.name} due to AZURE_ENABLED=false`);
       return false;
     }
+    
     if (
       model.name.includes("gemini-") &&
       process.env.NEXT_PUBLIC_GEMINI_ENABLED === "false"
     ) {
+      console.log(`Filtering out ${model.name} due to GEMINI_ENABLED=false`);
       return false;
     }
+    
     if (
       model.name.includes("ollama-") &&
       process.env.NEXT_PUBLIC_OLLAMA_ENABLED === "false"
     ) {
+      console.log(`Filtering out ${model.name} due to OLLAMA_ENABLED=false`);
       return false;
     }
 
@@ -185,12 +221,18 @@ export default function ModelSelector({
       model.name.includes("groq/") &&
       process.env.NEXT_PUBLIC_GROQ_ENABLED === "false"
     ) {
+      console.log(`Filtering out ${model.name} due to GROQ_ENABLED=false`);
       return false;
     }
 
     // By default, return true if the environment variable is not set or is set to true
     return true;
   });
+
+  // Debug to show available models after filtering
+  console.log("Available models after filtering:", 
+    allAllowedModels.map(m => ({name: m.name, label: m.label}))
+  );
 
   const selectedModelLabel =
     ALL_MODELS.find((m) => m.name === modelName)?.label || modelName;

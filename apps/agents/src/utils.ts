@@ -229,6 +229,12 @@ export const getModelConfig = (
   }
 
   if (customModelName.includes("claude-")) {
+    
+    // Add your debug code right here
+    console.log('ANTHROPIC_API_KEY present:', !!process.env.ANTHROPIC_API_KEY);
+    console.log('ANTHROPIC_API_KEY value:', process.env.ANTHROPIC_API_KEY);
+    console.log('Key length:', process.env.ANTHROPIC_API_KEY?.length);
+
     return {
       ...providerConfig,
       modelProvider: "anthropic",
@@ -365,7 +371,11 @@ export async function getModelFromConfig(
   const isLangChainUserModel = LANGCHAIN_USER_ONLY_MODELS.some(
     (m) => m === modelName
   );
-  if (isLangChainUserModel) {
+  
+  // Check if we should bypass restriction
+  const bypassRestriction = process.env.NEXT_PUBLIC_LANGSMITH_DEV_EMAIL_REQUIRED === "false";
+  
+  if (isLangChainUserModel && !bypassRestriction) {
     const user = await getUserFromConfig(config);
     if (!user) {
       throw new Error(
